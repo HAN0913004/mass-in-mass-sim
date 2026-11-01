@@ -4734,7 +4734,7 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 
   <!-- 操作說明遮罩彈窗 -->
-  <div id="onboarding-modal" class="onboarding-overlay" style="display:none;">
+  <div id="onboarding-modal" class="onboarding-overlay">
     <div class="onboarding-card">
       <div class="onboarding-header">
         <span class="onboarding-card-title">系統操作指引</span>
@@ -4791,7 +4791,7 @@ window.addEventListener('DOMContentLoaded', () => {
       }
       function closeModal() {
         modal.style.display = 'none';
-        try { sessionStorage.setItem('guide_seen', 'true'); } catch(e){}
+        // closed by user
       }
 
       if (openBtn) openBtn.onclick = openModal;
@@ -4801,13 +4801,8 @@ window.addEventListener('DOMContentLoaded', () => {
         if (e.target === modal) closeModal();
       };
 
-      // Auto-open on first mobile visit
-      try {
-        const seen = sessionStorage.getItem('guide_seen');
-        if (!seen && window.innerWidth <= 768) {
-          setTimeout(openModal, 300);
-        }
-      } catch(e){}
+      // Modal is open by default on entry. No sessionStorage block.
+      // Can be toggled open/closed anytime via buttons.
     }
 
     if (document.readyState === 'loading') {
