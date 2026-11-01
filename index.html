@@ -2904,6 +2904,46 @@
     }
   }
 
+
+  /* === TOP EXCITATION CONTROLS ON PORTRAIT / MOBILE === */
+  @media (max-width: 1023.98px), (orientation: portrait) {
+    .workstation-grid {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+    }
+    .workstation-sidebar {
+      display: contents !important;
+    }
+    .workstation-stage {
+      display: contents !important;
+    }
+    .controls-grid {
+      order: 1 !important; /* 激振來源設定永遠置頂最上方 */
+    }
+    .info-board {
+      order: 2 !important; /* 即時測站與 KPI 資訊 */
+    }
+    .stage-viewport-card {
+      order: 3 !important; /* 3D 視窗與播放控制 */
+    }
+    .chart-wrap {
+      order: 4 !important; /* 即時動態歷時響應 */
+    }
+    .specs-grid {
+      order: 5 !important; /* 結構與模態參數 */
+    }
+    .station-pga-grid {
+      order: 6 !important; /* 測站特徵與三向 PGA */
+    }
+  }
+
+  .onboarding-card-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1e3a8a;
+  }
+
 </style>
 </head>
 <body>
@@ -2925,7 +2965,7 @@
       </div>
     </div>
     <div class="header-right">
-      <button type="button" class="guide-toggle-pill" id="guide-modal-btn" title="查看操作指引">💡 操作說明</button>
+      <button type="button" class="guide-toggle-pill" id="guide-modal-btn" title="查看操作指引">操作說明</button>
       <div class="status-badge" id="sys-status-badge">
         <span class="status-dot-live" id="sys-status-dot"></span>
         <span id="sys-status-text">系統運算就緒</span>
@@ -4693,49 +4733,47 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-  <!-- 教授/初次訪問「快速操作導引」遮罩彈窗 -->
+  <!-- 操作說明遮罩彈窗 -->
   <div id="onboarding-modal" class="onboarding-overlay" style="display:none;">
     <div class="onboarding-card">
       <div class="onboarding-header">
-        <div class="onboarding-badge">🎓 教授 / 評審專用操作導引</div>
+        <span class="onboarding-card-title">系統操作指引</span>
         <button type="button" class="onboarding-close-btn" id="onboarding-close-x" aria-label="關閉">✕</button>
       </div>
       
-      <h3 class="onboarding-title">6-DOF 動力吸振系統 · 30 秒上手指南</h3>
-      <p class="onboarding-desc">本系統為規則與非規則協調 mass-in-mass 結構之數位分身平台，只需 3 步驟即可親自驗證吸振效果：</p>
+      <p class="onboarding-desc">本系統提供 6-DOF 耦合結構動力學時域與頻域模擬，操作步驟說明如下：</p>
       
       <div class="onboarding-steps">
         <div class="onboarding-step-item">
           <div class="step-num-badge">1</div>
           <div class="step-content">
-            <div class="step-heading">🕹️ 點選視角切換</div>
-            <div class="step-text">點擊 3D 視窗右上方的<strong>「等角 / 正視 / 俯視」</strong>按鈕，單指滑動即可 360° 旋轉、雙指自由縮放模型。</div>
+            <div class="step-heading">激振模式與測站選擇</div>
+            <div class="step-text">於最上方「激振來源設定」面板切換<strong>「921 地震波時域歷時（334 測站）」</strong>或<strong>「2.0～5.0 Hz 線性掃頻」</strong>，載入目標激振條件。</div>
           </div>
         </div>
         
         <div class="onboarding-step-item">
           <div class="step-num-badge">2</div>
           <div class="step-content">
-            <div class="step-heading">⚡ 選擇激振源模式</div>
-            <div class="step-text">左側面板可切換<strong>「921 地震波（334 測站歷時）」</strong>或<strong>「2.0～5.0 Hz 線性掃頻」</strong>，體驗真實強震衝擊。</div>
+            <div class="step-heading">視角切換與模型操作</div>
+            <div class="step-text">點擊 3D 視窗右上方的<strong>「等角 / 正視 / 俯視」</strong>按鈕快速對齊觀察角度；支援單指滑動旋轉、雙指縮放檢視機構細節。</div>
           </div>
         </div>
         
         <div class="onboarding-step-item">
           <div class="step-num-badge">3</div>
           <div class="step-content">
-            <div class="step-heading">📊 按下播放，見證吸振奇蹟</div>
-            <div class="step-text">按下<strong>「▶ 播放」</strong>按鈕，觀察<strong>單元 1（藍線）幾乎不動</strong>，能量全被轉移到<strong>單元 3 吸振端（紅線）劇烈晃動耗散</strong>！</div>
+            <div class="step-heading">執行模擬與響應觀測</div>
+            <div class="step-text">點擊<strong>「▶ 播放」</strong>按鈕啟動動態模擬，由下方波形圖與儀表觀察<strong>單元 1（基底輸入）與單元 3（吸振端）</strong>之振幅變化與能量定向轉移效果。</div>
           </div>
         </div>
       </div>
       
       <div class="onboarding-footer">
-        <button type="button" class="btn btn-primary onboarding-start-btn" id="onboarding-start-btn">🚀 開始體驗 3D 模擬系統</button>
+        <button type="button" class="btn btn-primary onboarding-start-btn" id="onboarding-start-btn">進入模擬系統</button>
       </div>
     </div>
   </div>
-
 
   <script>
   // === Onboarding Guide Modal Control ===
