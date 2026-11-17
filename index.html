@@ -2980,6 +2980,34 @@
     }
   }
 
+
+  .preset-group-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .preset-btn {
+    flex: 1;
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 5px 2px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .preset-btn:hover {
+    background: #E2E8F0;
+    color: #0F172A;
+  }
+  .preset-btn.active {
+    background: #2563EB;
+    border-color: #1D4ED8;
+    color: #FFFFFF;
+  }
+
 </style>
 </head>
 <body>
@@ -3081,11 +3109,16 @@
           <input type="number" id="amp-input" value="10.0" step="1.0" min="0.5" max="80.0" />
         </div>
 
+                <div class="preset-group-bar">
+          <button type="button" class="preset-btn active" id="btn-group-1" onclick="setPresetFreqs(3.00, 4.34, 5.33, this)">第1組 (3-4-5)</button>
+          <button type="button" class="preset-btn" id="btn-group-2" onclick="setPresetFreqs(4.34, 4.34, 4.34, this)">第2組 (規則4.3)</button>
+          <button type="button" class="preset-btn" id="btn-group-3" onclick="setPresetFreqs(5.33, 4.34, 3.00, this)">第3組 (5-4-3)</button>
+        </div>
         <div class="freq-cards-stack">
           <div class="freq-unit-card freq-unit-card-1">
             <span class="freq-unit-title">單元 1 (輸入端)</span>
             <div class="freq-unit-input-group">
-              <input type="number" id="f1-input" value="2.20" step="0.05" min="0.5" max="10.0" />
+              <input type="number" id="f1-input" value="3.00" step="0.05" min="0.5" max="10.0" />
               <span class="unit-tag">Hz</span>
             </div>
           </div>
@@ -3093,7 +3126,7 @@
           <div class="freq-unit-card freq-unit-card-2">
             <span class="freq-unit-title">單元 2 (中介端)</span>
             <div class="freq-unit-input-group">
-              <input type="number" id="f2-input" value="3.14" step="0.05" min="0.5" max="10.0" />
+              <input type="number" id="f2-input" value="4.34" step="0.05" min="0.5" max="10.0" />
               <span class="unit-tag">Hz</span>
             </div>
           </div>
@@ -3101,7 +3134,7 @@
           <div class="freq-unit-card freq-unit-card-3">
             <span class="freq-unit-title">單元 3 (吸振端)</span>
             <div class="freq-unit-input-group">
-              <input type="number" id="f3-input" value="3.89" step="0.05" min="0.5" max="10.0" />
+              <input type="number" id="f3-input" value="5.33" step="0.05" min="0.5" max="10.0" />
               <span class="unit-tag">Hz</span>
             </div>
           </div>
@@ -3313,7 +3346,8 @@ function removeMean(arr) {
 }
 
 function build6DOFSystem(f1, f2, f3) {
-  const k_e = 1285.0, k_i = 353.0, m_e = 0.705, zeta = 0.05;
+  // 實測參數：外彈簧 k_e = 1226.0 N/m，雙內彈簧 k_i = 2 * 327.0 = 654.0 N/m
+  const k_e = 1226.0, k_i = 654.0, m_e = 0.705, zeta = 0.05;
   const freqs = [f1, f2, f3];
   const m_i = freqs.map(f => k_i / Math.pow(2 * Math.PI * f, 2));
   const c_e = 2 * zeta * Math.sqrt(k_e * m_e);
@@ -3845,6 +3879,133 @@ function initThreeScene() {
   setCameraView('iso');
 }
 
+// ============================================================================
+// 1:1 實拍照片重現：3D 列印消光黑 PLA 砝碼盒與精密實驗器材組件 (依使用者提供之實拍照片與實驗報告)
+// ============================================================================
+
+// 1:1 三角導角 500g 消光黑 PLA 砝碼盒 (依實拍照 2、3 與 PDF p.4)
+function create500gTriangularContainer(xCenter, zBaseTop, ih, weight_d, weight_h, inGroup, plaMat, steelMat, darkMat) {
+  const r_hole = weight_d / 2.0;
+  const r_out = r_hole + 0.0050; // 0.50cm 壁厚 (照片標示 0.4~0.65cm)
+
+  // 逆時針 (CCW): c1 (前左) -> c2 (後中) -> c3 (前右)
+  const centers = [
+    { x: xCenter - 0.016, y: -0.022 },
+    { x: xCenter + 0.018, y:  0.000 },
+    { x: xCenter - 0.016, y:  0.022 }
+  ];
+
+  const shape = new THREE.Shape();
+  const N = 3;
+  const edgeAngles = [];
+  for (let i = 0; i < N; i++) {
+    const j = (i + 1) % N;
+    const dx = centers[j].x - centers[i].x;
+    const dy = centers[j].y - centers[i].y;
+    const theta = Math.atan2(dy, dx);
+    edgeAngles.push(theta - Math.PI / 2);
+  }
+
+  const startX = centers[0].x + Math.cos(edgeAngles[0]) * r_out;
+  const startY = centers[0].y + Math.sin(edgeAngles[0]) * r_out;
+  shape.moveTo(startX, startY);
+
+  for (let i = 0; i < N; i++) {
+    const j = (i + 1) % N;
+    const tx = centers[j].x + Math.cos(edgeAngles[i]) * r_out;
+    const ty = centers[j].y + Math.sin(edgeAngles[i]) * r_out;
+    shape.lineTo(tx, ty);
+
+    let aStart = edgeAngles[i];
+    let aEnd = edgeAngles[j];
+    while (aEnd < aStart) aEnd += Math.PI * 2;
+    shape.absarc(centers[j].x, centers[j].y, r_out, aStart, aEnd, false);
+  }
+  shape.closePath();
+
+  // 挖 3 個圓形砝碼孔
+  centers.forEach(c => {
+    const h = new THREE.Path();
+    h.absarc(c.x, c.y, r_hole, 0, Math.PI * 2, true);
+    shape.holes.push(h);
+  });
+
+  const extrudeSettings = {
+    steps: 1,
+    depth: ih,
+    bevelEnabled: true,
+    bevelThickness: 0.0012,
+    bevelSize: 0.0012,
+    bevelSegments: 3
+  };
+  const geom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  geom.rotateX(-Math.PI / 2);
+
+  const mesh = new THREE.Mesh(geom, plaMat);
+  mesh.position.set(0, zBaseTop, 0);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  inGroup.add(mesh);
+
+  // 3 顆 500g 鏡面鍍鉻 OIML 砝碼置入孔內 (頂部露出約 7mm 與圓頭)
+  centers.forEach(c => {
+    inGroup.add(makeRealisticWeightGroup(c.x, c.y, zBaseTop, weight_d, weight_h, steelMat, darkMat));
+  });
+}
+
+// 1:1 一字三孔 200g / 100g 消光黑 PLA 砝碼盒 (依實拍照 1 與 PDF p.3)
+function createPhotorealisticRectContainer(xCenter, zBaseTop, iw, il, ih, weight_d, weight_h, inGroup, plaMat, steelMat, darkMat) {
+  const halfW = iw / 2.0;
+  const halfL = il / 2.0;
+  const r_corner = 0.003;
+  const r_hole = weight_d / 2.0;
+
+  const shape = new THREE.Shape();
+  shape.moveTo(xCenter - halfW + r_corner, -halfL);
+  shape.lineTo(xCenter + halfW - r_corner, -halfL);
+  shape.quadraticCurveTo(xCenter + halfW, -halfL, xCenter + halfW, -halfL + r_corner);
+  shape.lineTo(xCenter + halfW, halfL - r_corner);
+  shape.quadraticCurveTo(xCenter + halfW, halfL, xCenter + halfW - r_corner, halfL);
+  shape.lineTo(xCenter - halfW + r_corner, halfL);
+  shape.quadraticCurveTo(xCenter - halfW, halfL, xCenter - halfW, halfL - r_corner);
+  shape.lineTo(xCenter - halfW, -halfL + r_corner);
+  shape.quadraticCurveTo(xCenter - halfW, -halfL, xCenter - halfW + r_corner, -halfL);
+  shape.closePath();
+
+  // 3 個一字排列圓孔
+  const wy_spacing = (il - weight_d) / 2.8;
+  [-wy_spacing, 0.0, wy_spacing].forEach(wy => {
+    const h = new THREE.Path();
+    h.absarc(xCenter, wy, r_hole, 0, Math.PI * 2, true);
+    shape.holes.push(h);
+  });
+
+  const extrudeSettings = {
+    steps: 1,
+    depth: ih,
+    bevelEnabled: true,
+    bevelThickness: 0.0012,
+    bevelSize: 0.0012,
+    bevelSegments: 3
+  };
+  const geom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  geom.rotateX(-Math.PI / 2);
+
+  const mesh = new THREE.Mesh(geom, plaMat);
+  mesh.position.set(0, zBaseTop, 0);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  inGroup.add(mesh);
+
+  // 側邊彈簧卡榫凸塊 (Photo 1)
+  inGroup.add(makeBoxByBounds(xCenter - halfW - 0.006, xCenter - halfW, -0.010, 0.010, zBaseTop, zBaseTop + 0.016, plaMat, true, 0x111317));
+
+  // 3 顆鏡面鍍鉻 OIML 砝碼置入孔內
+  [-wy_spacing, 0.0, wy_spacing].forEach(wy => {
+    inGroup.add(makeRealisticWeightGroup(xCenter, wy, zBaseTop, weight_d, weight_h, steelMat, darkMat));
+  });
+}
+
 function rebuildMechanicalMeshes(f1, f2, f3) {
   // 清除舊物件
   while (scene.children.length > 3) {
@@ -3862,15 +4023,16 @@ function rebuildMechanicalMeshes(f1, f2, f3) {
   const brassMat      = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.20, metalness: 0.88 });
   const slateMat      = new THREE.MeshStandardMaterial({ color: 0x546e7a, roughness: 0.45, metalness: 0.40 });
   const tireMat       = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.75, metalness: 0.10 });
-  const basePlateMat  = new THREE.MeshStandardMaterial({ color: 0xb0bec5, roughness: 0.38, metalness: 0.38 });
-  const steelMat      = new THREE.MeshStandardMaterial({ color: 0xe6edf5, roughness: 0.12, metalness: 0.88 });
-  const grooveMat     = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.42, metalness: 0.50 });
-  const darkMat       = new THREE.MeshStandardMaterial({ color: 0x263238, roughness: 0.45, metalness: 0.50 });
+  // 依實物照片全面升級為 3D 列印消光黑 PLA 材質與精密實驗器材組件
+  const plaMat        = new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.84, metalness: 0.10 });
+  const basePlateMat  = new THREE.MeshStandardMaterial({ color: 0x15171c, roughness: 0.86, metalness: 0.10 });
+  const steelMat      = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.08, metalness: 0.96 }); // OIML 鏡面鍍鉻砝碼
+  const grooveMat     = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.40, metalness: 0.70 });
+  const darkMat       = new THREE.MeshStandardMaterial({ color: 0x22262e, roughness: 0.60, metalness: 0.30 });
+  const nylonMat      = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.40, metalness: 0.05 }); // 實測滾輪白色尼龍
+  const bracketMat    = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.25, metalness: 0.85 }); // 輪架金屬片
   const outerAcrylicMat = new THREE.MeshPhysicalMaterial({
-    color: 0x29b6f6, transparent: true, opacity: 0.38, roughness: 0.15, metalness: 0.05, depthWrite: false
-  });
-  const innerAcrylicMat = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff, transparent: true, opacity: 0.24, roughness: 0.12, metalness: 0.05, depthWrite: false
+    color: 0x38bdf8, transparent: true, opacity: 0.32, roughness: 0.10, metalness: 0.05, depthWrite: false
   });
 
   // 1. 深色精密光學實驗桌平面 (#283548 桌面 + #1e293b 桌框裙邊 + 5cm/1cm 精密刻度基準網格線)
@@ -3911,12 +4073,16 @@ function rebuildMechanicalMeshes(f1, f2, f3) {
   shakerGroup.add(makeMagneticHookGroup(C.x_pillar, C.z_spring_ke_h, 1.0, C.hook_out_len, silverMat, brassMat));
   scene.add(shakerGroup);
 
-  // 3. 建立三組共振單元
-  const default_freqs = [2.20, 3.14, 3.89];
+  // 3. 建立三組共振單元（依最新實測量測尺寸修正：500g三角盒、200g長條盒、100g長條盒）
+  // 參數欄位：[iw(盒寬X), il(盒長Y), ih(盒高Z), bw(底板寬X), bl(底板長Y), bh(底板厚Z), weight_d(砝碼直徑), weight_h(砝碼高)]
+  const default_freqs = [3.00, 4.34, 5.33];
   const base_dims = [
-    [0.043, 0.113, 0.062, 0.065, 0.113, 0.010, 0.035, 0.035],
-    [0.038, 0.089, 0.047, 0.065, 0.100, 0.010, 0.027, 0.035],
-    [0.029, 0.071, 0.038, 0.065, 0.100, 0.010, 0.021, 0.035]
+    // 500g 盒 (E組: 1835.8g -> 3.004 Hz): 盒高4.5cm, 砝碼徑3.8cm, 3顆三角排列, 底板厚0.8cm長11.8cm
+    [0.082, 0.091, 0.045, 0.082, 0.118, 0.008, 0.038, 0.050],
+    // 200g 盒 (B/C/D組: 881.7g -> 4.335 Hz): 盒寬3.9cm長10.5cm高3.0cm, 底板寬5.5cm長11.8cm厚0.8cm
+    [0.039, 0.105, 0.030, 0.055, 0.118, 0.008, 0.028, 0.042],
+    // 100g 盒 (A組: 583.9g -> 5.326 Hz): 盒寬3.5cm長10.5cm高2.5cm, 底板寬5.5cm長11.8cm厚0.8cm
+    [0.035, 0.105, 0.025, 0.055, 0.118, 0.008, 0.022, 0.035]
   ];
   const cur_freqs = [f1, f2, f3];
   const dim_i_dynamic = cur_freqs.map(f => {
@@ -3927,7 +4093,7 @@ function rebuildMechanicalMeshes(f1, f2, f3) {
     return base_dims[bestIdx];
   });
 
-  GEOM_CONST.x_mass_starts = dim_i_dynamic.map(d => (d[3] - d[0]) / 2.0);
+  GEOM_CONST.x_mass_starts = [0.0, 0.0, 0.0];
 
   for (let i = 0; i < 3; i++) {
     const lGroup = new THREE.Group();
@@ -3961,25 +4127,40 @@ function rebuildMechanicalMeshes(f1, f2, f3) {
       lGroup.add(makeMagneticHookGroup(C.t_w + C.len_L_base, C.z_spring_ke_h, 1.0, C.hook_out_len, silverMat, brassMat));
     }
 
-    // (d) 內部滑車組件：繞 Z 軸水平旋轉 90 度 (長邊與 3 顆 OIML 不鏽鋼砝碼沿 Y 軸前後排列)
+    // (d) 內部滑車組件：1:1 還原實拍消光黑 PLA 砝碼盒、底板、白尼龍滾輪與彈簧卡榫
     const [iw, il, ih, bw, bl, bh, weight_d, weight_h] = dim_i_dynamic[i];
     const z_inner_base_bottom = C.z_inner_wheel_center + C.wheel_radius;
     const z_inner_base_top = z_inner_base_bottom + bh;
 
-    inGroup.add(makeBoxByBounds(0, bw, -bl / 2, bl / 2, z_inner_base_bottom, z_inner_base_top, basePlateMat, true, 0x546e7a));
+    // 1. 內質量底板 (Photo 1 & 2: 11.8cm x 5.5/8.2cm x 0.8cm 消光黑 PLA，含兩側滑軌凹槽)
+    inGroup.add(makeBoxByBounds(0, bw, -bl / 2, bl / 2, z_inner_base_bottom, z_inner_base_top, basePlateMat, true, 0x111317));
+    const slotIndMat = new THREE.MeshStandardMaterial({ color: 0x0d0f12, roughness: 0.95 });
+    inGroup.add(makeBoxByBounds(-0.001, bw + 0.001, -bl * 0.35, -bl * 0.25, z_inner_base_bottom + bh * 0.25, z_inner_base_bottom + bh * 0.75, slotIndMat));
+    inGroup.add(makeBoxByBounds(-0.001, bw + 0.001,  bl * 0.25,  bl * 0.35, z_inner_base_bottom + bh * 0.25, z_inner_base_bottom + bh * 0.75, slotIndMat));
 
-    const x_mass_start = (bw - iw) / 2.0;
+    // 2. 彈簧卡榫與固定螺栓 (PDF p.5: 彈簧卡榫 3.9g, 螺栓 3.7g)
+    inGroup.add(makeBoxByBounds(-0.008, 0.0, -0.008, 0.008, z_inner_base_top, z_inner_base_top + 0.018, plaMat, true, 0x111317));
+    inGroup.add(makeCyl(-0.004, 0.0, z_inner_base_top + 0.014, 'Y', 0.0022, 0.010, bracketMat, 16));
+
+    // 3. 實測白尼龍滾輪與金屬軸架 (PDF p.5: 內質量輪子 19.4g)
+    for (const wx_in_local of [bw * 0.25, bw * 0.75]) {
+      for (const y_sign of [-1.0, 1.0]) {
+        const wy = y_sign * track_y_offset;
+        inGroup.add(makeCyl(wx_in_local, wy, C.z_inner_wheel_center, 'Y', C.wheel_radius, 0.006, nylonMat, 24));
+        inGroup.add(makeCyl(wx_in_local, wy, C.z_inner_wheel_center, 'Y', C.wheel_radius * 0.50, 0.009, bracketMat, 16));
+        inGroup.add(makeBoxByBounds(wx_in_local - 0.005, wx_in_local + 0.005, wy - 0.005, wy + 0.005, z_inner_base_bottom - C.wheel_radius * 0.8, z_inner_base_bottom, bracketMat));
+      }
+    }
+
+    // 4. 實拍 1:1 消光黑 PLA 砝碼盒與 OIML 鏡面鍍鉻砝碼
     const x_mass_center = bw / 2.0;
-    for (const wy_local of [-weight_d, 0.0, weight_d]) {
-      inGroup.add(makeRealisticWeightGroup(x_mass_center, wy_local, z_inner_base_top, weight_d, weight_h, steelMat, grooveMat));
+    if (weight_d >= 0.035) {
+      // 500g 盒：Photo 2 & 3 三角導角三孔柱體 (前二後一，孔徑3.8cm，肋厚0.65cm，外壁0.4cm，盒高4.5cm)
+      create500gTriangularContainer(x_mass_center, z_inner_base_top, ih, weight_d, weight_h, inGroup, plaMat, steelMat, grooveMat);
+    } else {
+      // 100g / 200g 盒：Photo 1 一字三孔厚壁長條盒 (200g: 10.5x3.9x3.0cm; 100g: 10.5x3.5x2.5cm)
+      createPhotorealisticRectContainer(x_mass_center, z_inner_base_top, iw, il, ih, weight_d, weight_h, inGroup, plaMat, steelMat, grooveMat);
     }
-
-    for (const wx_in_local of [bw * 0.22, bw * 0.78]) {
-      inGroup.add(makeCyl(wx_in_local, track_y_offset, C.z_inner_wheel_center, 'Y', C.wheel_radius, 0.008, darkMat, 16));
-      inGroup.add(makeCyl(wx_in_local, -track_y_offset, C.z_inner_wheel_center, 'Y', C.wheel_radius, 0.008, darkMat, 16));
-    }
-
-    inGroup.add(makeBoxByBounds(x_mass_start, x_mass_start + iw, -il / 2, il / 2, z_inner_base_top, z_inner_base_top + ih, innerAcrylicMat, true, 0x455a64));
 
     scene.add(lGroup);
     scene.add(inGroup);
@@ -4408,6 +4589,19 @@ function drawWaveformCanvas(frame) {
   ctx.restore();
 }
 
+
+function setPresetFreqs(f1, f2, f3, btn) {
+  const el1 = document.getElementById('f1-input');
+  const el2 = document.getElementById('f2-input');
+  const el3 = document.getElementById('f3-input');
+  if (el1) el1.value = f1.toFixed(2);
+  if (el2) el2.value = f2.toFixed(2);
+  if (el3) el3.value = f3.toFixed(2);
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  runSimulation();
+}
+
 function runSimulation() {
   // 切換測站、方向、模式或共振參數時，強制暫停並重置回 Frame 0 等待使用者點擊播放
   isPlaying = false;
@@ -4419,9 +4613,9 @@ function runSimulation() {
   if (sidebarEl) sidebarEl.setAttribute('data-mode', mode);
 
   const amp = parseFloat(document.getElementById('amp-input').value) || 10.0;
-  const f1 = parseFloat(document.getElementById('f1-input').value) || 2.20;
-  const f2 = parseFloat(document.getElementById('f2-input').value) || 3.14;
-  const f3 = parseFloat(document.getElementById('f3-input').value) || 3.89;
+  const f1 = parseFloat(document.getElementById('f1-input').value) || 3.00;
+  const f2 = parseFloat(document.getElementById('f2-input').value) || 4.34;
+  const f3 = parseFloat(document.getElementById('f3-input').value) || 5.33;
   const comp = document.getElementById('comp-select').value;
   const stCode = document.getElementById('station-select').value || 'TCU084';
   const stMeta = (customUploadedStation && customUploadedStation.code === stCode)
